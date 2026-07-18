@@ -20,3 +20,9 @@ weights:
   motion: 0.25
   audio: 0.20
   duration: 0.25
+background_music:
+  epic_path: music/yaya.mp3
+  calm_path: music/altyn.mp3
+  max_volume: 0.12
+  quiet_volume: 0.18
+  epic_threshold: 60

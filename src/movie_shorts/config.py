@@ -8,6 +8,21 @@ from movie_shorts.errors import UserFacingError
 
 
 @dataclass(frozen=True, slots=True)
+class BackgroundMusicConfig:
+    epic_path: Path
+    calm_path: Path
+    max_volume: float = 0.12
+    quiet_volume: float = 0.18
+    epic_threshold: float = 60.0
+
+    def __post_init__(self) -> None:
+        if not 0 < self.max_volume <= self.quiet_volume <= 1:
+            raise UserFacingError("Громкость фоновой музыки должна быть в диапазоне от 0 до 1.")
+        if not 0 <= self.epic_threshold <= 100:
+            raise UserFacingError("Порог эпичности должен быть от 0 до 100.")
+
+
+@dataclass(frozen=True, slots=True)
 class RunConfig:
     input_path: Path
     output_dir: Path
@@ -18,6 +33,7 @@ class RunConfig:
     analysis_limit: int = 30
     language: str = "ru"
     device: Literal["auto", "cpu", "cuda"] = "auto"
+    background_music: BackgroundMusicConfig | None = None
 
     def __post_init__(self) -> None:
         if not 1 <= self.count <= 5:
@@ -49,13 +65,30 @@ def load_run_config(
             raise UserFacingError("Не удалось прочитать YAML-конфигурацию.") from error
         if not isinstance(loaded, dict):
             raise UserFacingError("Конфигурация должна быть YAML-объектом с параметрами.")
-        allowed = {"count", "min_duration", "max_duration", "skip_intro", "analysis_limit", "language", "device", "keywords", "weights"}
+        allowed = {"count", "min_duration", "max_duration", "skip_intro", "analysis_limit", "language", "device", "keywords", "weights", "background_music"}
         unknown = set(loaded) - allowed
         if unknown:
             raise UserFacingError(f"Неизвестные параметры конфигурации: {', '.join(sorted(unknown))}.")
         values.update(loaded)
 
     values.update({key: value for key, value in overrides.items() if value is not None})
+    background_music = values.get("background_music")
+    if background_music is not None and not isinstance(background_music, dict):
+        raise UserFacingError("Параметр background_music должен быть объектом.")
+
+    music_config = None
+    if isinstance(background_music, dict):
+        try:
+            music_config = BackgroundMusicConfig(
+                epic_path=Path(str(background_music["epic_path"])),
+                calm_path=Path(str(background_music["calm_path"])),
+                max_volume=float(background_music.get("max_volume", 0.12)),
+                quiet_volume=float(background_music.get("quiet_volume", 0.18)),
+                epic_threshold=float(background_music.get("epic_threshold", 60.0)),
+            )
+        except KeyError as error:
+            raise UserFacingError("Для фоновой музыки укажите epic_path и calm_path.") from error
+
     return RunConfig(
         input_path=Path(input_path),
         output_dir=output_dir,
@@ -66,4 +99,5 @@ def load_run_config(
         analysis_limit=int(values.get("analysis_limit", 30)),
         language=str(values.get("language", "ru")),
         device=str(values.get("device", "auto")),  # type: ignore[arg-type]
+        background_music=music_config,
     )
