@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
+import pytest
+
 from movie_shorts.config import RunConfig
+from movie_shorts.errors import UserFacingError
 from movie_shorts.models import Candidate, Scene
 from movie_shorts.pipeline import Pipeline, Services
 from movie_shorts.services.media import MediaInfo
@@ -73,3 +76,27 @@ def test_pipeline_passes_only_analysis_limit_to_precise_scorer(tmp_path) -> None
 
     assert received == [3]
     assert (tmp_path / "output" / "prefiltered_candidates.json").exists()
+
+
+def test_pipeline_logs_original_transcription_error(tmp_path) -> None:
+    source = tmp_path / "film.mp4"
+    source.touch()
+
+    def fail_transcription(*args):
+        try:
+            raise RuntimeError("CUDA model загрузить не удалось")
+        except RuntimeError as error:
+            raise UserFacingError("Не удалось распознать речь в видео.") from error
+
+    services = Services(
+        probe_media=lambda path: MediaInfo(25, True, False), resolve_device=lambda device: "cpu",
+        detect_scenes=lambda *args: [Scene(1, 0, 25)], transcribe=fail_transcription,
+        build_candidates=lambda *args: [], score_candidates=lambda *args, **kwargs: [],
+        select_candidates=lambda *args: [], build_ass=lambda *args: "", render_short=lambda *args: tmp_path / "short.mp4",
+    )
+
+    with pytest.raises(UserFacingError, match="Не удалось распознать речь"):
+        Pipeline(services).run(RunConfig(source, tmp_path / "output"))
+
+    debug_log = (tmp_path / "output" / "logs" / "debug.log").read_text(encoding="utf-8")
+    assert "CUDA model загрузить не удалось" in debug_log

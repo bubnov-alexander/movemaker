@@ -1,9 +1,11 @@
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
+import traceback
 from typing import Any
 
 from movie_shorts.config import RunConfig
+from movie_shorts.errors import UserFacingError
 from movie_shorts.models import Candidate, Scene, ScoreBreakdown, TranscriptSegment, WordTiming
 from movie_shorts.services.candidates import build_candidates, select_candidates, words_for_interval
 from movie_shorts.services.media import probe_media, resolve_device
@@ -97,7 +99,11 @@ class Pipeline:
 
         notify("[3/5] Расшифровка речи")
         raw_transcript = storage.load_stage("transcript")
-        transcript = [_segment_from_dict(item) for item in raw_transcript] if raw_transcript else self.services.transcribe(config.input_path, config.language, device)
+        try:
+            transcript = [_segment_from_dict(item) for item in raw_transcript] if raw_transcript else self.services.transcribe(config.input_path, config.language, device)
+        except UserFacingError:
+            storage.log_debug(traceback.format_exc())
+            raise
         if raw_transcript is None:
             storage.save_stage("transcript", [asdict(item) for item in transcript])
 
