@@ -19,9 +19,12 @@ def build_candidates(
     segments: list[TranscriptSegment],
     min_duration: float,
     max_duration: float,
+    skip_intro: float = 0.0,
 ) -> list[Candidate]:
     intervals: dict[tuple[float, float], tuple[Scene, ...]] = {}
     for start_index, first_scene in enumerate(scenes):
+        if first_scene.start < skip_intro:
+            continue
         window: list[Scene] = []
         for scene in scenes[start_index:]:
             if scene.end - first_scene.start > max_duration:

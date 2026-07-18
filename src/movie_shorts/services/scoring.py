@@ -32,14 +32,46 @@ def duration_score(duration: float) -> float:
 
 
 def prefilter_candidates(candidates: list[Candidate], limit: int) -> list[Candidate]:
-    return sorted(
+    ranked = sorted(
         candidates,
         key=lambda candidate: (
             -(keyword_score(candidate.text) + duration_score(candidate.end - candidate.start)),
             candidate.start,
             candidate.id,
         ),
-    )[:limit]
+    )
+    if len(ranked) <= limit:
+        return ranked
+
+    first_start = min(candidate.start for candidate in ranked)
+    last_start = max(candidate.start for candidate in ranked)
+    if first_start == last_start:
+        return ranked[:limit]
+
+    bucket_count = min(limit, len(ranked))
+    bucket_width = (last_start - first_start) / bucket_count
+    selected_by_bucket: dict[int, Candidate] = {}
+    for candidate in ranked:
+        bucket = min(int((candidate.start - first_start) / bucket_width), bucket_count - 1)
+        center = first_start + (bucket + 0.5) * bucket_width
+        current = selected_by_bucket.get(bucket)
+        if current is None or _prefilter_key(candidate, center) < _prefilter_key(current, center):
+            selected_by_bucket[bucket] = candidate
+
+    selected = list(selected_by_bucket.values())
+    selected_ids = {candidate.id for candidate in selected}
+    for candidate in ranked:
+        if len(selected) == limit:
+            break
+        if candidate.id not in selected_ids:
+            selected.append(candidate)
+
+    return sorted(selected, key=lambda candidate: (candidate.start, candidate.id))
+
+
+def _prefilter_key(candidate: Candidate, bucket_center: float) -> tuple[float, float, float, int]:
+    priority = keyword_score(candidate.text) + duration_score(candidate.end - candidate.start)
+    return (-priority, abs(candidate.start - bucket_center), candidate.start, candidate.id)
 
 
 def _motion_score(video_path: Path, candidate: Candidate) -> float:

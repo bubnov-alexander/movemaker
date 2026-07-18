@@ -29,6 +29,19 @@ def test_prefilter_limits_candidates_by_text_and_duration() -> None:
     assert [item.id for item in prefilter_candidates(candidates, limit=1)] == [1]
 
 
+def test_prefilter_distributes_equal_score_candidates_across_video() -> None:
+    candidates = [
+        Candidate(1, 0, 40, (1,), ""),
+        Candidate(2, 50, 90, (2,), ""),
+        Candidate(3, 100, 140, (3,), ""),
+        Candidate(4, 150, 190, (4,), ""),
+    ]
+
+    selected = prefilter_candidates(candidates, limit=2)
+
+    assert [item.id for item in selected] == [2, 3]
+
+
 def test_precise_scoring_reports_each_candidate_progress(tmp_path) -> None:
     messages: list[tuple[int, int]] = []
     candidates = [Candidate(1, 0, 50, (), ""), Candidate(2, 60, 110, (), "")]

@@ -115,7 +115,13 @@ class Pipeline:
             if raw_prefiltered:
                 candidates = [_candidate_from_dict(item) for item in raw_prefiltered]
             else:
-                all_candidates = self.services.build_candidates(scenes, transcript, config.min_duration, config.max_duration)
+                all_candidates = self.services.build_candidates(
+                    scenes,
+                    transcript,
+                    config.min_duration,
+                    config.max_duration,
+                    config.skip_intro,
+                )
                 candidates = prefilter_candidates(all_candidates, config.analysis_limit)
                 storage.save_stage("prefiltered_candidates", [asdict(item) for item in candidates])
             notify(f"[4/5] Быстрый отбор: {len(candidates)} кандидатов из {len(all_candidates) if 'all_candidates' in locals() else len(candidates)}")

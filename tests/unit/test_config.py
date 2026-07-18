@@ -20,3 +20,12 @@ def test_rejects_non_positive_analysis_limit(tmp_path) -> None:
 
     with pytest.raises(UserFacingError, match="Лимит анализа должен быть больше нуля"):
         load_run_config("film.mp4", tmp_path / "out", config_path)
+
+
+def test_reads_skip_intro_from_yaml(tmp_path) -> None:
+    config_path = tmp_path / "settings.yaml"
+    config_path.write_text("skip_intro: 120\n", encoding="utf-8")
+
+    config = load_run_config("film.mp4", tmp_path / "out", config_path)
+
+    assert config.skip_intro == 120

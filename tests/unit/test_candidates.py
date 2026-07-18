@@ -18,3 +18,12 @@ def test_builder_never_returns_interval_longer_than_maximum() -> None:
     candidates = build_candidates(scenes, [], min_duration=20, max_duration=120)
 
     assert all(candidate.end - candidate.start <= 120 for candidate in candidates)
+
+
+def test_builder_skips_candidates_from_intro() -> None:
+    scenes = [Scene(1, 0, 20), Scene(2, 20, 40), Scene(3, 40, 65), Scene(4, 65, 90)]
+
+    candidates = build_candidates(scenes, [], min_duration=20, max_duration=120, skip_intro=40)
+
+    assert candidates
+    assert all(candidate.start >= 40 for candidate in candidates)

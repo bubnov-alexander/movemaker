@@ -2,6 +2,7 @@
 count: 5
 min_duration: 20
 max_duration: 120
+skip_intro: 0
 analysis_limit: 30
 language: ru
 device: auto
