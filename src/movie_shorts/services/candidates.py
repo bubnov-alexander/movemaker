@@ -47,3 +47,22 @@ def build_candidates(
             )
         )
     return candidates
+
+
+def select_candidates(candidates: list[Candidate], count: int) -> list[Candidate]:
+    selected: list[Candidate] = []
+    ordered = sorted(
+        candidates,
+        key=lambda candidate: (
+            -(candidate.score.total if candidate.score is not None else 0.0),
+            candidate.start,
+            candidate.id,
+        ),
+    )
+    for candidate in ordered:
+        overlaps = any(candidate.start < item.end and item.start < candidate.end for item in selected)
+        if not overlaps:
+            selected.append(candidate)
+        if len(selected) == count:
+            break
+    return selected
