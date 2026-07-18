@@ -30,6 +30,7 @@ class RunConfig:
     min_duration: float = 20.0
     max_duration: float = 120.0
     skip_intro: float = 0.0
+    skip_outro: float = 60.0
     analysis_limit: int = 30
     language: str = "ru"
     device: Literal["auto", "cpu", "cuda"] = "auto"
@@ -44,6 +45,8 @@ class RunConfig:
             raise UserFacingError("Минимальная длительность не может быть больше максимальной.")
         if self.skip_intro < 0:
             raise UserFacingError("Длительность пропуска начала не может быть отрицательной.")
+        if self.skip_outro < 0:
+            raise UserFacingError("Длительность пропуска конца не может быть отрицательной.")
         if self.analysis_limit < 1:
             raise UserFacingError("Лимит анализа должен быть больше нуля.")
 
@@ -65,7 +68,7 @@ def load_run_config(
             raise UserFacingError("Не удалось прочитать YAML-конфигурацию.") from error
         if not isinstance(loaded, dict):
             raise UserFacingError("Конфигурация должна быть YAML-объектом с параметрами.")
-        allowed = {"count", "min_duration", "max_duration", "skip_intro", "analysis_limit", "language", "device", "keywords", "weights", "background_music"}
+        allowed = {"count", "min_duration", "max_duration", "skip_intro", "skip_outro", "analysis_limit", "language", "device", "keywords", "weights", "background_music"}
         unknown = set(loaded) - allowed
         if unknown:
             raise UserFacingError(f"Неизвестные параметры конфигурации: {', '.join(sorted(unknown))}.")
@@ -96,6 +99,7 @@ def load_run_config(
         min_duration=float(values.get("min_duration", 20.0)),
         max_duration=float(values.get("max_duration", 120.0)),
         skip_intro=float(values.get("skip_intro", 0.0)),
+        skip_outro=float(values.get("skip_outro", 60.0)),
         analysis_limit=int(values.get("analysis_limit", 30)),
         language=str(values.get("language", "ru")),
         device=str(values.get("device", "auto")),  # type: ignore[arg-type]

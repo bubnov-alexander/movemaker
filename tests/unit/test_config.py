@@ -50,3 +50,18 @@ def test_reads_background_music_from_yaml(tmp_path) -> None:
         0.16,
         55,
     )
+
+
+def test_skip_outro_defaults_to_sixty_seconds(tmp_path) -> None:
+    config = load_run_config("film.mp4", tmp_path / "out")
+
+    assert config.skip_outro == 60
+
+
+def test_reads_skip_outro_from_yaml(tmp_path) -> None:
+    config_path = tmp_path / "settings.yaml"
+    config_path.write_text("skip_outro: 45\n", encoding="utf-8")
+
+    config = load_run_config("film.mp4", tmp_path / "out", config_path)
+
+    assert config.skip_outro == 45
