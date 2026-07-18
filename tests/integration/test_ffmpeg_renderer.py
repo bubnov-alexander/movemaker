@@ -35,8 +35,8 @@ def test_renderer_mixes_background_music_with_source_audio(tmp_path, sample_vide
         Candidate(1, 0, 2, (1,), ""),
         None,
         tmp_path / "out.mp4",
-        selection,
-        music_config,
+        music=selection,
+        music_config=music_config,
     )
     probe = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_type", "-of", "csv=p=0", str(output)],

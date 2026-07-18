@@ -61,10 +61,10 @@ def render_short(
     candidate: Candidate,
     subtitle_path: Path | None,
     target_path: Path,
+    debug_log: Path | None = None,
     music: MusicSelection | None = None,
     music_config: BackgroundMusicConfig | None = None,
     has_source_audio: bool = True,
-    debug_log: Path | None = None,
 ) -> Path:
     target_path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = target_path.with_name(f"{target_path.stem}.tmp{target_path.suffix}")

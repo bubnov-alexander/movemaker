@@ -1,10 +1,11 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
-from movie_shorts.config import RunConfig
+from movie_shorts.config import BackgroundMusicConfig, RunConfig
 from movie_shorts.errors import UserFacingError
-from movie_shorts.models import Candidate, Scene
+from movie_shorts.models import Candidate, Scene, ScoreBreakdown
 from movie_shorts.pipeline import Pipeline, Services
 from movie_shorts.services.media import MediaInfo
 from movie_shorts.storage import RunStorage
@@ -100,3 +101,24 @@ def test_pipeline_logs_original_transcription_error(tmp_path) -> None:
 
     debug_log = (tmp_path / "output" / "logs" / "debug.log").read_text(encoding="utf-8")
     assert "CUDA model загрузить не удалось" in debug_log
+
+
+def test_pipeline_records_and_passes_selected_music(tmp_path) -> None:
+    source = tmp_path / "film.mp4"
+    source.touch()
+    received = []
+    candidate = Candidate(1, 0, 25, (1,), "беги монстр", ScoreBreakdown(90, 80, 70, 100, 85))
+    services = Services(
+        probe_media=lambda path: MediaInfo(25, True, False), resolve_device=lambda device: "cpu",
+        detect_scenes=lambda *args: [Scene(1, 0, 25)], transcribe=lambda *args: [],
+        build_candidates=lambda *args: [candidate], score_candidates=lambda items, *args, **kwargs: items,
+        select_candidates=lambda items, count: items, build_ass=lambda words, start: "",
+        render_short=lambda *args, **kwargs: received.append(kwargs["music"]) or tmp_path / "short.mp4",
+    )
+    music_config = BackgroundMusicConfig(Path("music/yaya.mp3"), Path("music/altyn.mp3"))
+
+    Pipeline(services).run(RunConfig(source, tmp_path / "out", background_music=music_config))
+
+    assert received[0].track == "epic"
+    metadata = RunStorage(tmp_path / "out").manifest()["shorts"]["short-01"]["music"]
+    assert metadata["track"] == "epic"

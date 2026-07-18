@@ -35,6 +35,21 @@ movie-shorts create ./movie.mp4 --output ./runs/film-001 --device auto --config 
 
 В результате создаются `manifest.json`, `scenes.json`, `transcript.json`, `candidates.json`, файлы `subtitles/*.ass`, итоговые `shorts/*.mp4` и технический журнал `logs/debug.log`.
 
+## Фоновая музыка
+
+Скопируйте треки в локальную (не добавляемую в Git) папку `music/` и укажите их пути в `config.yaml`: для эпичных сцен — YA YA, для остальных — altyn instrumental. Конвейер выбирает YA YA по совокупности текста, движения, энергии оригинального звука и общего балла сцены. Во время речи и громких моментов FFmpeg автоматически приглушает фон; оригинальная дорожка не меняется.
+
+```yaml
+background_music:
+  epic_path: music/yaya.mp3
+  calm_path: music/altyn.mp3
+  max_volume: 0.12
+  quiet_volume: 0.18
+  epic_threshold: 60
+```
+
+Уменьшите `max_volume`, если фон заметен поверх диалогов. Увеличьте `epic_threshold`, если YA YA должен включаться только в самых сильных сценах.
+
 ## Обработка ошибок
 
 Сообщения CLI выводятся на русском. При ошибке FFmpeg или распознавания подробности сохраняются в `logs/debug.log`. При отсутствии CUDA обработка в режиме `auto` продолжается на CPU.

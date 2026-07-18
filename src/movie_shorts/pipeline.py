@@ -9,6 +9,7 @@ from movie_shorts.errors import UserFacingError
 from movie_shorts.models import Candidate, Scene, ScoreBreakdown, TranscriptSegment, WordTiming
 from movie_shorts.services.candidates import build_candidates, select_candidates, words_for_interval
 from movie_shorts.services.media import probe_media, resolve_device
+from movie_shorts.services.music import select_background_music
 from movie_shorts.services.renderer import render_short
 from movie_shorts.services.scenes import detect_scenes
 from movie_shorts.services.scoring import prefilter_candidates, score_candidates
@@ -139,15 +140,28 @@ class Pipeline:
             ass_path = storage.output_dir / "subtitles" / f"short-{index:02d}.ass"
             ass_path.write_text(self.services.build_ass(words_for_interval(transcript, candidate.start, candidate.end), candidate.start), encoding="utf-8")
             target_path = storage.output_dir / "shorts" / f"short-{index:02d}.mp4"
-            rendered_files.append(
-                self.services.render_short(
-                    config.input_path,
-                    candidate,
-                    ass_path,
-                    target_path,
-                    storage.output_dir / "logs" / "debug.log",
-                )
+            music = None
+            if config.background_music is not None:
+                music = select_background_music(candidate, config.background_music)
+            storage.save_short_metadata(index, candidate.id, music)
+            render_args = (
+                config.input_path,
+                candidate,
+                ass_path,
+                target_path,
+                storage.output_dir / "logs" / "debug.log",
             )
+            if config.background_music is None:
+                rendered_files.append(self.services.render_short(*render_args))
+            else:
+                rendered_files.append(
+                    self.services.render_short(
+                        *render_args,
+                        music=music,
+                        music_config=config.background_music,
+                        has_source_audio=media.has_audio,
+                    )
+                )
             if index == 1:
                 notify("Создан первый ролик: shorts/short-01.mp4")
 
