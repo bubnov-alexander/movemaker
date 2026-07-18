@@ -27,3 +27,12 @@ def test_builder_skips_candidates_from_intro() -> None:
 
     assert candidates
     assert all(candidate.start >= 40 for candidate in candidates)
+
+
+def test_builder_excludes_intervals_that_reach_outro() -> None:
+    scenes = [Scene(1, 0, 30), Scene(2, 30, 60), Scene(3, 60, 90)]
+
+    candidates = build_candidates(scenes, [], 20, 60, video_duration=90, skip_outro=45)
+
+    assert candidates
+    assert all(candidate.end <= 45 for candidate in candidates)

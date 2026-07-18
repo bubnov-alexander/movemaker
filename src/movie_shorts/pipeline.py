@@ -122,6 +122,8 @@ class Pipeline:
                     config.min_duration,
                     config.max_duration,
                     config.skip_intro,
+                    media.duration,
+                    config.skip_outro,
                 )
                 candidates = prefilter_candidates(all_candidates, config.analysis_limit)
                 storage.save_stage("prefiltered_candidates", [asdict(item) for item in candidates])
