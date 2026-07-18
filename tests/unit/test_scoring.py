@@ -27,3 +27,12 @@ def test_prefilter_limits_candidates_by_text_and_duration() -> None:
     ]
 
     assert [item.id for item in prefilter_candidates(candidates, limit=1)] == [1]
+
+
+def test_precise_scoring_reports_each_candidate_progress(tmp_path) -> None:
+    messages: list[tuple[int, int]] = []
+    candidates = [Candidate(1, 0, 50, (), ""), Candidate(2, 60, 110, (), "")]
+
+    score_candidates(candidates, tmp_path / "x.mp4", has_audio=False, progress=lambda current, total: messages.append((current, total)))
+
+    assert messages == [(1, 2), (2, 2)]

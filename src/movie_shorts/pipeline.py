@@ -73,22 +73,29 @@ class Pipeline:
     def __init__(self, services: Services = DEFAULT_SERVICES) -> None:
         self.services = services
 
-    def run(self, config: RunConfig) -> RunReport:
+    def run(self, config: RunConfig, progress: Callable[[str], None] | None = None) -> RunReport:
+        def notify(message: str) -> None:
+            if progress is not None:
+                progress(message)
+
         parameters = asdict(config)
         parameters["input_path"] = str(config.input_path)
         parameters["output_dir"] = str(config.output_dir)
         storage = RunStorage.create(config.output_dir, parameters)
+        notify("[1/5] Проверка видео")
         media = self.services.probe_media(config.input_path)
         device = self.services.resolve_device(config.device)
         warnings: list[str] = []
         if config.device == "auto" and device == "cpu":
             warnings.append("CUDA недоступна. Обработка выполняется на CPU.")
 
+        notify("[2/5] Поиск сцен")
         raw_scenes = storage.load_stage("scenes")
         scenes = [_scene_from_dict(item) for item in raw_scenes] if raw_scenes else self.services.detect_scenes(config.input_path, media.duration)
         if raw_scenes is None:
             storage.save_stage("scenes", [asdict(item) for item in scenes])
 
+        notify("[3/5] Расшифровка речи")
         raw_transcript = storage.load_stage("transcript")
         transcript = [_segment_from_dict(item) for item in raw_transcript] if raw_transcript else self.services.transcribe(config.input_path, config.language, device)
         if raw_transcript is None:
@@ -105,7 +112,13 @@ class Pipeline:
                 all_candidates = self.services.build_candidates(scenes, transcript, config.min_duration, config.max_duration)
                 candidates = prefilter_candidates(all_candidates, config.analysis_limit)
                 storage.save_stage("prefiltered_candidates", [asdict(item) for item in candidates])
-            candidates = self.services.score_candidates(candidates, config.input_path, media.has_audio)
+            notify(f"[4/5] Быстрый отбор: {len(candidates)} кандидатов из {len(all_candidates) if 'all_candidates' in locals() else len(candidates)}")
+            candidates = self.services.score_candidates(
+                candidates,
+                config.input_path,
+                media.has_audio,
+                progress=lambda current, total: notify(f"[5/5] Точная оценка: {current}/{total}"),
+            )
             storage.save_stage("candidates", [asdict(item) for item in candidates])
 
         selected = self.services.select_candidates(candidates, config.count)
@@ -123,6 +136,8 @@ class Pipeline:
                     storage.output_dir / "logs" / "debug.log",
                 )
             )
+            if index == 1:
+                notify("Создан первый ролик: shorts/short-01.mp4")
 
         if len(rendered_files) < config.count:
             warnings.append(f"Создано {len(rendered_files)} из {config.count} роликов: подходящих непересекающихся фрагментов недостаточно.")

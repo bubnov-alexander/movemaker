@@ -9,7 +9,7 @@ def test_cli_reports_completed_mocked_run(monkeypatch, tmp_path) -> None:
     source.touch()
     output = tmp_path / "run"
 
-    def fake_run(self, config):
+    def fake_run(self, config, **kwargs):
         for name in ("scenes.json", "transcript.json", "candidates.json"):
             (config.output_dir).mkdir(parents=True, exist_ok=True)
             (config.output_dir / name).write_text("[]", encoding="utf-8")

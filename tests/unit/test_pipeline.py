@@ -28,7 +28,7 @@ def test_pipeline_reuses_completed_scenes_stage(tmp_path) -> None:
         detect_scenes=detector,
         transcribe=lambda *args: [],
         build_candidates=lambda *args: [Candidate(1, 0, 25, (1,), "")],
-        score_candidates=lambda candidates, *args: candidates,
+        score_candidates=lambda candidates, *args, **kwargs: candidates,
         select_candidates=lambda candidates, count: candidates,
         build_ass=lambda words, start: "",
         render_short=lambda *args: tmp_path / "output" / "shorts" / "short-01.mp4",
@@ -47,7 +47,7 @@ def test_pipeline_serializes_path_parameters_for_a_new_run(tmp_path) -> None:
         probe_media=lambda path: MediaInfo(25, True, False), resolve_device=lambda device: "cpu",
         detect_scenes=lambda *args: [Scene(1, 0, 25)], transcribe=lambda *args: [],
         build_candidates=lambda *args: [Candidate(1, 0, 25, (1,), "")],
-        score_candidates=lambda candidates, *args: candidates, select_candidates=lambda candidates, count: candidates,
+        score_candidates=lambda candidates, *args, **kwargs: candidates, select_candidates=lambda candidates, count: candidates,
         build_ass=lambda words, start: "", render_short=lambda *args: tmp_path / "short.mp4",
     )
 
@@ -64,7 +64,7 @@ def test_pipeline_passes_only_analysis_limit_to_precise_scorer(tmp_path) -> None
     services = Services(
         probe_media=lambda path: MediaInfo(1_300, True, False), resolve_device=lambda device: "cpu",
         detect_scenes=lambda *args: [], transcribe=lambda *args: [], build_candidates=lambda *args: candidates,
-        score_candidates=lambda items, *args: received.append(len(items)) or items,
+        score_candidates=lambda items, *args, **kwargs: received.append(len(items)) or items,
         select_candidates=lambda items, count: items[:count], build_ass=lambda words, start: "",
         render_short=lambda *args: tmp_path / "short.mp4",
     )

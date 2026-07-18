@@ -2,6 +2,7 @@ from typer.testing import CliRunner
 
 from movie_shorts.cli import app
 from movie_shorts.pipeline import RunReport
+from movie_shorts.errors import UserFacingError
 
 
 def test_help_is_in_russian() -> None:
@@ -28,7 +29,7 @@ def test_create_runs_pipeline_and_reports_result(monkeypatch, tmp_path) -> None:
 
     monkeypatch.setattr(
         "movie_shorts.cli.Pipeline.run",
-        lambda self, config: RunReport((), ("Создано 0 из 5 роликов",)),
+        lambda self, config, **kwargs: RunReport((), ("Создано 0 из 5 роликов",)),
     )
 
     result = CliRunner().invoke(app, ["create", str(source), "--output", str(output)])
@@ -44,7 +45,7 @@ def test_create_reads_count_from_yaml_config(monkeypatch, tmp_path) -> None:
     config_file.write_text("count: 3\n", encoding="utf-8")
     captured = {}
 
-    def fake_run(self, config):
+    def fake_run(self, config, **kwargs):
         captured["count"] = config.count
         return RunReport((), ())
 
@@ -54,3 +55,15 @@ def test_create_reads_count_from_yaml_config(monkeypatch, tmp_path) -> None:
 
     assert result.exit_code == 1
     assert captured["count"] == 3
+
+
+def test_cli_prints_user_error_without_traceback(monkeypatch, tmp_path) -> None:
+    def raise_user_error(*args, **kwargs):
+        raise UserFacingError("Файл не найден.")
+
+    monkeypatch.setattr("movie_shorts.cli.Pipeline.run", raise_user_error)
+
+    result = CliRunner().invoke(app, ["create", "missing.mp4", "--output", str(tmp_path)])
+
+    assert result.exit_code == 1
+    assert result.output == "Файл не найден.\n"

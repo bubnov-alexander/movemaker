@@ -1,5 +1,6 @@
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 from movie_shorts.models import Candidate, ScoreBreakdown
@@ -95,11 +96,22 @@ def _normalize(values: list[float]) -> list[float]:
 
 
 def score_candidates(
-    candidates: list[Candidate], video_path: Path, has_audio: bool, keywords: dict[str, int] = DEFAULT_KEYWORDS
+    candidates: list[Candidate],
+    video_path: Path,
+    has_audio: bool,
+    keywords: dict[str, int] = DEFAULT_KEYWORDS,
+    progress: Callable[[int, int], None] | None = None,
 ) -> list[Candidate]:
-    raw_text = [keyword_score(candidate.text, keywords) for candidate in candidates]
-    raw_motion = [_motion_score(video_path, candidate) for candidate in candidates]
-    raw_audio = [_audio_score(video_path, candidate) if has_audio else 0.0 for candidate in candidates]
+    raw_text: list[float] = []
+    raw_motion: list[float] = []
+    raw_audio: list[float] = []
+    total = len(candidates)
+    for index, candidate in enumerate(candidates, start=1):
+        raw_text.append(keyword_score(candidate.text, keywords))
+        raw_motion.append(_motion_score(video_path, candidate))
+        raw_audio.append(_audio_score(video_path, candidate) if has_audio else 0.0)
+        if progress is not None:
+            progress(index, total)
     text_scores, motion_scores, audio_scores = map(_normalize, (raw_text, raw_motion, raw_audio))
 
     return [

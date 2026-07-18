@@ -25,6 +25,8 @@ movie-shorts create ./movie.mp4 --output ./runs/film-001 --device auto --config 
 
 Параметры командной строки имеют приоритет над значениями `config.yaml`. Начните с [config.example.yaml](config.example.yaml).
 
+`analysis_limit` (по умолчанию `30`) ограничивает число фрагментов, для которых считаются медленные метрики движения и звука. Чем меньше значение, тем быстрее появляется первый ролик, но тем меньше вариантов участвует в точном отборе. Во время работы CLI выводит этапы и счётчик точной оценки в stderr.
+
 В результате создаются `manifest.json`, `scenes.json`, `transcript.json`, `candidates.json`, файлы `subtitles/*.ass`, итоговые `shorts/*.mp4` и технический журнал `logs/debug.log`.
 
 ## Обработка ошибок

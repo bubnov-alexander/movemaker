@@ -22,6 +22,7 @@ def create(
     count: Annotated[int | None, typer.Option(help="Количество роликов: от 1 до 5.")] = None,
     min_duration: Annotated[float | None, typer.Option(help="Минимальная длительность в секундах.")] = None,
     max_duration: Annotated[float | None, typer.Option(help="Максимальная длительность в секундах.")] = None,
+    analysis_limit: Annotated[int | None, typer.Option(help="Лимит тяжёлой оценки кандидатов.")] = None,
     language: Annotated[str | None, typer.Option(help="Язык распознавания речи.")] = None,
     device: Annotated[str | None, typer.Option(help="Устройство: auto, cpu или cuda.")] = None,
     config_path: Annotated[Path | None, typer.Option("--config", help="Путь к YAML-конфигурации.")] = None,
@@ -35,6 +36,7 @@ def create(
             count=count,
             min_duration=min_duration,
             max_duration=max_duration,
+            analysis_limit=analysis_limit,
             language=language,
             device=device,
         )
@@ -42,7 +44,11 @@ def create(
         typer.echo(str(error), err=True)
         raise typer.Exit(code=2) from error
 
-    report = Pipeline().run(config)
+    try:
+        report = Pipeline().run(config, progress=lambda message: typer.echo(message, err=True))
+    except UserFacingError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=1) from error
     for warning in report.warnings:
         typer.echo(warning)
     if not report.rendered_files:
