@@ -62,3 +62,22 @@ def test_configure_onnx_logging_hides_warnings(monkeypatch) -> None:
     _configure_onnx_logging()
 
     assert FakeOnnxRuntime.severity == 3
+
+
+def test_transcriber_configures_onnx_before_loading_whisper(monkeypatch, tmp_path) -> None:
+    events: list[str] = []
+    factory = FakeModelFactory()
+    monkeypatch.setattr(
+        "movie_shorts.services.transcript._configure_onnx_logging",
+        lambda: events.append("onnx"),
+    )
+    monkeypatch.setattr(
+        "movie_shorts.services.transcript._load_whisper_model",
+        lambda: events.append("whisper") or factory,
+        raising=False,
+    )
+    monkeypatch.setattr("movie_shorts.services.transcript.WhisperModel", factory)
+
+    transcribe(tmp_path / "film.mp4", language="ru", device="cpu")
+
+    assert events == ["onnx", "whisper"]

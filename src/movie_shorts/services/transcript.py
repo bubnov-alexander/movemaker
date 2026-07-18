@@ -6,10 +6,7 @@ import ctranslate2
 from movie_shorts.errors import UserFacingError
 from movie_shorts.models import TranscriptSegment, WordTiming
 
-try:
-    from faster_whisper import WhisperModel
-except ImportError:
-    WhisperModel: Any = None
+WhisperModel: Any = None
 
 
 def _compute_type(device: str, supported_cuda_types: set[str] | None = None) -> str:
@@ -33,13 +30,25 @@ def _configure_onnx_logging() -> None:
     onnxruntime.set_default_logger_severity(3)
 
 
-def transcribe(video_path: Path, language: str, device: str) -> list[TranscriptSegment]:
-    if WhisperModel is None:
-        raise UserFacingError("Не установлен faster-whisper. Установите зависимости проекта.")
+def _load_whisper_model() -> Any:
+    global WhisperModel
+
+    if WhisperModel is not None:
+        return WhisperModel
 
     try:
+        from faster_whisper import WhisperModel as FasterWhisperModel
+    except ImportError as error:
+        raise UserFacingError("Не установлен faster-whisper. Установите зависимости проекта.") from error
+
+    WhisperModel = FasterWhisperModel
+    return WhisperModel
+
+
+def transcribe(video_path: Path, language: str, device: str) -> list[TranscriptSegment]:
+    try:
         _configure_onnx_logging()
-        model = WhisperModel(
+        model = _load_whisper_model()(
             "small",
             device=device,
             compute_type=_compute_type(device),
@@ -63,6 +72,8 @@ def transcribe(video_path: Path, language: str, device: str) -> list[TranscriptS
             )
             for segment in detected_segments
         ]
+    except UserFacingError:
+        raise
     except Exception as error:
         raise UserFacingError(
             "Не удалось распознать речь в видео. Подробности сохранены в logs/debug.log."
