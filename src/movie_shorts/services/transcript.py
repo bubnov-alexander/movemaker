@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Any
 
+import ctranslate2
+
 from movie_shorts.errors import UserFacingError
 from movie_shorts.models import TranscriptSegment, WordTiming
 
@@ -8,6 +10,18 @@ try:
     from faster_whisper import WhisperModel
 except ImportError:
     WhisperModel: Any = None
+
+
+def _compute_type(device: str, supported_cuda_types: set[str] | None = None) -> str:
+    if device != "cuda":
+        return "int8"
+
+    supported_types = supported_cuda_types or ctranslate2.get_supported_compute_types("cuda")
+    for compute_type in ("float16", "int8_float16", "int8_float32", "int8", "float32"):
+        if compute_type in supported_types:
+            return compute_type
+
+    return "float32"
 
 
 def transcribe(video_path: Path, language: str, device: str) -> list[TranscriptSegment]:
@@ -18,7 +32,7 @@ def transcribe(video_path: Path, language: str, device: str) -> list[TranscriptS
         model = WhisperModel(
             "small",
             device=device,
-            compute_type="float16" if device == "cuda" else "int8",
+            compute_type=_compute_type(device),
         )
         detected_segments, _ = model.transcribe(
             str(video_path),
