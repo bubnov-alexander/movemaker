@@ -30,6 +30,17 @@ def duration_score(duration: float) -> float:
     return 0.0
 
 
+def prefilter_candidates(candidates: list[Candidate], limit: int) -> list[Candidate]:
+    return sorted(
+        candidates,
+        key=lambda candidate: (
+            -(keyword_score(candidate.text) + duration_score(candidate.end - candidate.start)),
+            candidate.start,
+            candidate.id,
+        ),
+    )[:limit]
+
+
 def _motion_score(video_path: Path, candidate: Candidate) -> float:
     try:
         import cv2

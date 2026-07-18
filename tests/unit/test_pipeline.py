@@ -54,3 +54,22 @@ def test_pipeline_serializes_path_parameters_for_a_new_run(tmp_path) -> None:
     Pipeline(services).run(RunConfig(source, tmp_path / "fresh-output", min_duration=20, max_duration=120))
 
     assert (tmp_path / "fresh-output" / "manifest.json").exists()
+
+
+def test_pipeline_passes_only_analysis_limit_to_precise_scorer(tmp_path) -> None:
+    source = tmp_path / "film.mp4"
+    source.touch()
+    received: list[int] = []
+    candidates = [Candidate(index, index * 30, index * 30 + 25, (index,), "беги" if index == 1 else "") for index in range(1, 41)]
+    services = Services(
+        probe_media=lambda path: MediaInfo(1_300, True, False), resolve_device=lambda device: "cpu",
+        detect_scenes=lambda *args: [], transcribe=lambda *args: [], build_candidates=lambda *args: candidates,
+        score_candidates=lambda items, *args: received.append(len(items)) or items,
+        select_candidates=lambda items, count: items[:count], build_ass=lambda words, start: "",
+        render_short=lambda *args: tmp_path / "short.mp4",
+    )
+
+    Pipeline(services).run(RunConfig(source, tmp_path / "output", analysis_limit=3))
+
+    assert received == [3]
+    assert (tmp_path / "output" / "prefiltered_candidates.json").exists()

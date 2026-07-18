@@ -9,7 +9,7 @@ from movie_shorts.services.candidates import build_candidates, select_candidates
 from movie_shorts.services.media import probe_media, resolve_device
 from movie_shorts.services.renderer import render_short
 from movie_shorts.services.scenes import detect_scenes
-from movie_shorts.services.scoring import score_candidates
+from movie_shorts.services.scoring import prefilter_candidates, score_candidates
 from movie_shorts.services.subtitles import build_ass
 from movie_shorts.services.transcript import transcribe
 from movie_shorts.storage import RunStorage
@@ -98,7 +98,13 @@ class Pipeline:
         if raw_candidates:
             candidates = [_candidate_from_dict(item) for item in raw_candidates]
         else:
-            candidates = self.services.build_candidates(scenes, transcript, config.min_duration, config.max_duration)
+            raw_prefiltered = storage.load_stage("prefiltered_candidates")
+            if raw_prefiltered:
+                candidates = [_candidate_from_dict(item) for item in raw_prefiltered]
+            else:
+                all_candidates = self.services.build_candidates(scenes, transcript, config.min_duration, config.max_duration)
+                candidates = prefilter_candidates(all_candidates, config.analysis_limit)
+                storage.save_stage("prefiltered_candidates", [asdict(item) for item in candidates])
             candidates = self.services.score_candidates(candidates, config.input_path, media.has_audio)
             storage.save_stage("candidates", [asdict(item) for item in candidates])
 

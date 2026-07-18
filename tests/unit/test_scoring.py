@@ -1,5 +1,5 @@
 from movie_shorts.models import Candidate
-from movie_shorts.services.scoring import duration_score, keyword_score, score_candidates
+from movie_shorts.services.scoring import duration_score, keyword_score, prefilter_candidates, score_candidates
 
 
 def test_text_score_is_case_insensitive_for_russian_keywords() -> None:
@@ -18,3 +18,12 @@ def test_score_breakdown_has_weighted_total(tmp_path) -> None:
 
     assert scored[0].score is not None
     assert 0 <= scored[0].score.total <= 100
+
+
+def test_prefilter_limits_candidates_by_text_and_duration() -> None:
+    candidates = [
+        Candidate(1, 0, 50, (), "беги монстр"),
+        Candidate(2, 60, 110, (), ""),
+    ]
+
+    assert [item.id for item in prefilter_candidates(candidates, limit=1)] == [1]
