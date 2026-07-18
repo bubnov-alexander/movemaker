@@ -3,6 +3,8 @@ from pathlib import Path
 
 from movie_shorts.errors import UserFacingError
 from movie_shorts.models import Candidate
+from movie_shorts.config import BackgroundMusicConfig
+from movie_shorts.services.music import MusicSelection
 
 
 def render_command(
@@ -10,6 +12,9 @@ def render_command(
     candidate: Candidate,
     subtitle_path: Path | None,
     target_path: Path,
+    music: MusicSelection | None = None,
+    music_config: BackgroundMusicConfig | None = None,
+    has_source_audio: bool = True,
 ) -> list[str]:
     foreground = "scale=1080:1920:force_original_aspect_ratio=decrease"
     background = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:10"
@@ -19,12 +24,36 @@ def render_command(
         filter_parts[-1] += f",ass={escaped_subtitle}"
     filter_parts[-1] += "[out]"
 
-    return [
+    command = [
         "ffmpeg", "-y", "-ss", str(candidate.start), "-i", str(source_path),
-        "-t", str(candidate.end - candidate.start), "-filter_complex", ";".join(filter_parts),
-        "-map", "[out]", "-map", "0:a?", "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-movflags", "+faststart", str(target_path),
     ]
+    audio_map = "0:a?"
+    if music is not None:
+        if music_config is None:
+            raise ValueError("Для фоновой музыки требуется конфигурация.")
+        duration = candidate.end - candidate.start
+        command.extend(["-stream_loop", "-1", "-i", str(music.path)])
+        filter_parts.append(
+            f"[1:a]volume={music_config.quiet_volume},atrim=duration={duration},asetpts=N/SR/TB[music]"
+        )
+        if has_source_audio:
+            filter_parts.extend([
+                "[0:a]asplit=2[original][sidechain]",
+                "[music][sidechain]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=300[ducked]",
+                f"[ducked]volume={music_config.max_volume / music_config.quiet_volume}[music_limited]",
+                "[original][music_limited]amix=inputs=2:duration=first:normalize=0[mixed]",
+            ])
+            audio_map = "[mixed]"
+        else:
+            filter_parts.append(f"[music]volume={music_config.max_volume / music_config.quiet_volume}[music_limited]")
+            audio_map = "[music_limited]"
+
+    command.extend([
+        "-t", str(candidate.end - candidate.start), "-filter_complex", ";".join(filter_parts),
+        "-map", "[out]", "-map", audio_map, "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-movflags", "+faststart", str(target_path),
+    ])
+    return command
 
 
 def render_short(
@@ -32,11 +61,24 @@ def render_short(
     candidate: Candidate,
     subtitle_path: Path | None,
     target_path: Path,
+    music: MusicSelection | None = None,
+    music_config: BackgroundMusicConfig | None = None,
+    has_source_audio: bool = True,
     debug_log: Path | None = None,
 ) -> Path:
     target_path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = target_path.with_name(f"{target_path.stem}.tmp{target_path.suffix}")
-    command = render_command(source_path, candidate, subtitle_path, temporary_path)
+    if music is not None and not music.path.is_file():
+        raise UserFacingError(f"Не найден фоновый трек: {music.path}")
+    command = render_command(
+        source_path,
+        candidate,
+        subtitle_path,
+        temporary_path,
+        music,
+        music_config,
+        has_source_audio,
+    )
     try:
         result = subprocess.run(command, capture_output=True, text=True, check=False)
     except FileNotFoundError as error:
