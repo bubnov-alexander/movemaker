@@ -35,3 +35,22 @@ def test_create_runs_pipeline_and_reports_result(monkeypatch, tmp_path) -> None:
 
     assert result.exit_code == 1
     assert "Создано 0 из 5 роликов" in result.output
+
+
+def test_create_reads_count_from_yaml_config(monkeypatch, tmp_path) -> None:
+    source = tmp_path / "film.mp4"
+    source.touch()
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("count: 3\n", encoding="utf-8")
+    captured = {}
+
+    def fake_run(self, config):
+        captured["count"] = config.count
+        return RunReport((), ())
+
+    monkeypatch.setattr("movie_shorts.cli.Pipeline.run", fake_run)
+
+    result = CliRunner().invoke(app, ["create", str(source), "--output", str(tmp_path / "out"), "--config", str(config_file)])
+
+    assert result.exit_code == 1
+    assert captured["count"] == 3

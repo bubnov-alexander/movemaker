@@ -1,0 +1,20 @@
+# Параметры локального конвейера Movie Shorts.
+count: 5
+min_duration: 20
+max_duration: 120
+language: ru
+device: auto
+keywords:
+  убей: 20
+  смерть: 20
+  беги: 18
+  помогите: 15
+  монстр: 25
+  кровь: 25
+  пистолет: 18
+  спасайся: 18
+weights:
+  text: 0.30
+  motion: 0.25
+  audio: 0.20
+  duration: 0.25

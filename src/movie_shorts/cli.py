@@ -3,7 +3,7 @@ from typing import Annotated
 
 import typer
 
-from movie_shorts.config import RunConfig
+from movie_shorts.config import load_run_config
 from movie_shorts.errors import UserFacingError
 from movie_shorts.pipeline import Pipeline
 
@@ -19,22 +19,24 @@ def main() -> None:
 def create(
     input_path: Annotated[Path, typer.Argument(help="Путь к исходному видео.")],
     output_dir: Annotated[Path, typer.Option("--output", help="Папка для результата.")],
-    count: Annotated[int, typer.Option(help="Количество роликов: от 1 до 5.")] = 5,
-    min_duration: Annotated[float, typer.Option(help="Минимальная длительность в секундах.")] = 20.0,
-    max_duration: Annotated[float, typer.Option(help="Максимальная длительность в секундах.")] = 120.0,
-    language: Annotated[str, typer.Option(help="Язык распознавания речи.")] = "ru",
-    device: Annotated[str, typer.Option(help="Устройство: auto, cpu или cuda.")] = "auto",
+    count: Annotated[int | None, typer.Option(help="Количество роликов: от 1 до 5.")] = None,
+    min_duration: Annotated[float | None, typer.Option(help="Минимальная длительность в секундах.")] = None,
+    max_duration: Annotated[float | None, typer.Option(help="Максимальная длительность в секундах.")] = None,
+    language: Annotated[str | None, typer.Option(help="Язык распознавания речи.")] = None,
+    device: Annotated[str | None, typer.Option(help="Устройство: auto, cpu или cuda.")] = None,
+    config_path: Annotated[Path | None, typer.Option("--config", help="Путь к YAML-конфигурации.")] = None,
 ) -> None:
     """Проверить параметры и подготовить локальный запуск."""
     try:
-        config = RunConfig(
+        config = load_run_config(
             input_path=input_path,
             output_dir=output_dir,
+            config_path=config_path,
             count=count,
             min_duration=min_duration,
             max_duration=max_duration,
             language=language,
-            device=device,  # type: ignore[arg-type]
+            device=device,
         )
     except UserFacingError as error:
         typer.echo(str(error), err=True)

@@ -13,6 +13,7 @@ dependencies = [
     "scenedetect[opencv]>=0.6",
     "faster-whisper>=1.0",
     "opencv-python-headless>=4.10",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -26,4 +27,3 @@ testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
