@@ -12,6 +12,24 @@ def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
 
 
+def group_words(words: tuple[WordTiming, ...]) -> list[tuple[WordTiming, ...]]:
+    groups: list[list[WordTiming]] = []
+    for word in words:
+        if not groups:
+            groups.append([word])
+            continue
+
+        current_group = groups[-1]
+        previous_word = current_group[-1]
+        group_duration = word.end - current_group[0].start
+        pause = word.start - previous_word.end
+        if len(current_group) == 4 or pause > 0.45 or group_duration > 2.5:
+            groups.append([word])
+        else:
+            current_group.append(word)
+    return [tuple(group) for group in groups]
+
+
 def build_ass(words: tuple[WordTiming, ...], video_start: float) -> str:
     header = """[Script Info]
 ScriptType: v4.00+
@@ -26,12 +44,14 @@ Style: Default,Arial,72,&H00FFFFFF,&H0000FFFF,&H00000000,&H80000000,1,0,0,0,100,
 Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
 """
     events = []
-    for word in words:
-        start = word.start - video_start
-        end = word.end - video_start
-        duration_centiseconds = max(round((end - start) * 100), 1)
-        text = _escape(word.text)
+    for group in group_words(words):
+        start = group[0].start - video_start
+        end = group[-1].end - video_start
+        text = " ".join(
+            f"{{\\k{max(round((word.end - word.start) * 100), 1)}}}{_escape(word.text)}"
+            for word in group
+        )
         events.append(
-            f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,,{{\\c&H00FFFF&\\k{duration_centiseconds}}}{text}"
+            f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,,{text}"
         )
     return header + "\n".join(events) + ("\n" if events else "")
