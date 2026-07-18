@@ -5,6 +5,7 @@ import typer
 
 from movie_shorts.config import RunConfig
 from movie_shorts.errors import UserFacingError
+from movie_shorts.pipeline import Pipeline
 
 app = typer.Typer(help="Локальное создание Shorts из видео.", no_args_is_help=True)
 
@@ -26,7 +27,7 @@ def create(
 ) -> None:
     """Проверить параметры и подготовить локальный запуск."""
     try:
-        RunConfig(
+        config = RunConfig(
             input_path=input_path,
             output_dir=output_dir,
             count=count,
@@ -39,4 +40,9 @@ def create(
         typer.echo(str(error), err=True)
         raise typer.Exit(code=2) from error
 
-    typer.echo("Подготовка конвейера…")
+    report = Pipeline().run(config)
+    for warning in report.warnings:
+        typer.echo(warning)
+    if not report.rendered_files:
+        raise typer.Exit(code=1)
+    typer.echo(f"Готово: создано роликов — {len(report.rendered_files)}.")

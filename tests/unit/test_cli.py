@@ -1,6 +1,7 @@
 from typer.testing import CliRunner
 
 from movie_shorts.cli import app
+from movie_shorts.pipeline import RunReport
 
 
 def test_help_is_in_russian() -> None:
@@ -18,3 +19,19 @@ def test_rejects_non_positive_count(tmp_path) -> None:
 
     assert result.exit_code == 2
     assert "Количество роликов должно быть" in result.output
+
+
+def test_create_runs_pipeline_and_reports_result(monkeypatch, tmp_path) -> None:
+    source = tmp_path / "film.mp4"
+    source.touch()
+    output = tmp_path / "output"
+
+    monkeypatch.setattr(
+        "movie_shorts.cli.Pipeline.run",
+        lambda self, config: RunReport((), ("Создано 0 из 5 роликов",)),
+    )
+
+    result = CliRunner().invoke(app, ["create", str(source), "--output", str(output)])
+
+    assert result.exit_code == 1
+    assert "Создано 0 из 5 роликов" in result.output
