@@ -1,5 +1,7 @@
+import sys
+
 from movie_shorts.models import WordTiming
-from movie_shorts.services.transcript import _compute_type, transcribe
+from movie_shorts.services.transcript import _compute_type, _configure_onnx_logging, transcribe
 
 
 class FakeWord:
@@ -45,3 +47,18 @@ def test_compute_type_uses_int8_float32_when_float16_is_unavailable() -> None:
     compute_type = _compute_type("cuda", supported_types)
 
     assert compute_type == "int8_float32"
+
+
+def test_configure_onnx_logging_hides_warnings(monkeypatch) -> None:
+    class FakeOnnxRuntime:
+        severity: int | None = None
+
+        @classmethod
+        def set_default_logger_severity(cls, severity: int) -> None:
+            cls.severity = severity
+
+    monkeypatch.setitem(sys.modules, "onnxruntime", FakeOnnxRuntime)
+
+    _configure_onnx_logging()
+
+    assert FakeOnnxRuntime.severity == 3

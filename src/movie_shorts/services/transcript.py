@@ -24,11 +24,21 @@ def _compute_type(device: str, supported_cuda_types: set[str] | None = None) -> 
     return "float32"
 
 
+def _configure_onnx_logging() -> None:
+    try:
+        import onnxruntime
+    except ImportError:
+        return
+
+    onnxruntime.set_default_logger_severity(3)
+
+
 def transcribe(video_path: Path, language: str, device: str) -> list[TranscriptSegment]:
     if WhisperModel is None:
         raise UserFacingError("Не установлен faster-whisper. Установите зависимости проекта.")
 
     try:
+        _configure_onnx_logging()
         model = WhisperModel(
             "small",
             device=device,
