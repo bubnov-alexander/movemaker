@@ -58,3 +58,18 @@ def test_render_command_places_looped_layout_video_in_top_third() -> None:
     assert "crop=1080:960" in rendered
     assert "overlay=0:0" in rendered
     assert "overlay=0:480" in rendered
+
+
+def test_render_command_mirrors_video_layers_but_not_subtitles() -> None:
+    command = render_command(
+        Path("film.mp4"),
+        Candidate(1, 10, 30, (), ""),
+        Path("subtitles/short-01.ass"),
+        Path("out.mp4"),
+        layout_background_path=Path("backgrounds/background.mp4"),
+    )
+
+    rendered = " ".join(command)
+
+    assert rendered.count("hflip") == 3
+    assert rendered.index("ass=subtitles/short-01.ass") > rendered.index("overlay=0:480")
