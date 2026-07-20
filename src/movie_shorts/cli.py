@@ -27,6 +27,7 @@ def create(
     analysis_limit: Annotated[int | None, typer.Option(help="Лимит тяжёлой оценки кандидатов.")] = None,
     language: Annotated[str | None, typer.Option(help="Язык распознавания речи.")] = None,
     device: Annotated[str | None, typer.Option(help="Устройство: auto, cpu или cuda.")] = None,
+    mode: Annotated[str | None, typer.Option(help="Режим: highlights или sequential.")] = None,
     config_path: Annotated[Path | None, typer.Option("--config", help="Путь к YAML-конфигурации.")] = None,
 ) -> None:
     """Проверить параметры и подготовить локальный запуск."""
@@ -43,6 +44,7 @@ def create(
             analysis_limit=analysis_limit,
             language=language,
             device=device,
+            generation_mode=mode,
         )
     except UserFacingError as error:
         typer.echo(str(error), err=True)

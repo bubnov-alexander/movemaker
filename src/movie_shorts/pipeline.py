@@ -13,6 +13,7 @@ from movie_shorts.services.music import select_background_music
 from movie_shorts.services.renderer import render_short
 from movie_shorts.services.scenes import detect_scenes
 from movie_shorts.services.scoring import prefilter_candidates, score_candidates
+from movie_shorts.services.sequential import build_sequential_candidates
 from movie_shorts.services.subtitles import build_ass
 from movie_shorts.services.transcript import transcribe
 from movie_shorts.storage import RunStorage
@@ -136,7 +137,15 @@ class Pipeline:
             )
             storage.save_stage("candidates", [asdict(item) for item in candidates])
 
-        selected = self.services.select_candidates(candidates, config.count)
+        if config.generation_mode == "sequential":
+            selected = build_sequential_candidates(
+                scenes,
+                transcript,
+                config.skip_intro,
+                media.duration - config.skip_outro,
+            )
+        else:
+            selected = self.services.select_candidates(candidates, config.count)
         rendered_files: list[Path] = []
         for index, candidate in enumerate(selected, start=1):
             ass_path = storage.output_dir / "subtitles" / f"short-{index:02d}.ass"

@@ -36,6 +36,7 @@ class RunConfig:
     device: Literal["auto", "cpu", "cuda"] = "auto"
     background_music: BackgroundMusicConfig | None = None
     layout_background_path: Path | None = None
+    generation_mode: Literal["highlights", "sequential"] = "highlights"
 
     def __post_init__(self) -> None:
         if not 1 <= self.count <= 5:
@@ -50,6 +51,8 @@ class RunConfig:
             raise UserFacingError("Длительность пропуска конца не может быть отрицательной.")
         if self.analysis_limit < 1:
             raise UserFacingError("Лимит анализа должен быть больше нуля.")
+        if self.generation_mode not in {"highlights", "sequential"}:
+            raise UserFacingError("Режим генерации: highlights или sequential.")
 
 
 def load_run_config(
@@ -69,7 +72,7 @@ def load_run_config(
             raise UserFacingError("Не удалось прочитать YAML-конфигурацию.") from error
         if not isinstance(loaded, dict):
             raise UserFacingError("Конфигурация должна быть YAML-объектом с параметрами.")
-        allowed = {"count", "min_duration", "max_duration", "skip_intro", "skip_outro", "analysis_limit", "language", "device", "keywords", "weights", "background_music", "layout_background_path"}
+        allowed = {"count", "min_duration", "max_duration", "skip_intro", "skip_outro", "analysis_limit", "language", "device", "keywords", "weights", "background_music", "layout_background_path", "generation_mode"}
         unknown = set(loaded) - allowed
         if unknown:
             raise UserFacingError(f"Неизвестные параметры конфигурации: {', '.join(sorted(unknown))}.")
@@ -111,4 +114,5 @@ def load_run_config(
         device=str(values.get("device", "auto")),  # type: ignore[arg-type]
         background_music=music_config,
         layout_background_path=Path(str(values["layout_background_path"])) if values.get("layout_background_path") is not None else None,
+        generation_mode=str(values.get("generation_mode", "highlights")),  # type: ignore[arg-type]
     )
