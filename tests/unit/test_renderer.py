@@ -37,7 +37,7 @@ def test_render_command_ducks_looped_background_music() -> None:
     assert command.count("-i") == 2
     assert "-stream_loop -1" in rendered
     assert "atrim=duration=20" in rendered
-    assert "sidechaincompress" in rendered
+    assert "sidechaincompress=threshold=0.08:ratio=4" in rendered
     assert "[mixed]" in rendered
 
 
@@ -54,6 +54,7 @@ def test_render_command_places_looped_layout_video_in_top_third() -> None:
 
     assert command.count("-i") == 2
     assert "-stream_loop -1 -i backgrounds/background.mp4" in rendered
-    assert "crop=1080:640" in rendered
+    assert "crop=1080:480" in rendered
+    assert "crop=1080:960" in rendered
     assert "overlay=0:0" in rendered
-    assert "overlay=0:640" in rendered
+    assert "overlay=0:480" in rendered
