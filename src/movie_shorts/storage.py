@@ -44,6 +44,18 @@ class RunStorage:
         except (FileNotFoundError, json.JSONDecodeError):
             return None
 
+    def save_short_metadata(self, index: int, candidate_id: int, music: Any | None) -> None:
+        manifest = self.manifest()
+        metadata: dict[str, Any] = {"candidate_id": candidate_id, "music": None}
+        if music is not None:
+            metadata["music"] = {
+                "track": music.track,
+                "path": str(music.path),
+                "epic_score": music.epic_score,
+            }
+        manifest.setdefault("shorts", {})[f"short-{index:02d}"] = metadata
+        self._write_json(self._manifest_path, manifest)
+
     def log_debug(self, message: str) -> None:
         with (self.output_dir / "logs" / "debug.log").open("a", encoding="utf-8") as file:
             file.write(f"{message}\n")
@@ -57,5 +69,5 @@ class RunStorage:
     def _write_json(path: Path, payload: Any) -> None:
         temporary_path = path.with_suffix(f"{path.suffix}.tmp")
         with temporary_path.open("w", encoding="utf-8") as file:
-            json.dump(payload, file, ensure_ascii=False, indent=2)
+            json.dump(payload, file, ensure_ascii=False, indent=2, default=str)
         temporary_path.replace(path)

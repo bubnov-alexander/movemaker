@@ -3,9 +3,11 @@ count: 5
 min_duration: 20
 max_duration: 120
 skip_intro: 0
+skip_outro: 60
 analysis_limit: 30
 language: ru
 device: auto
+# layout_background_path: backgrounds/background.mp4
 keywords:
   убей: 20
   смерть: 20
@@ -20,3 +22,9 @@ weights:
   motion: 0.25
   audio: 0.20
   duration: 0.25
+background_music:
+  epic_path: music/yaya.mp3
+  calm_path: music/altyn.mp3
+  max_volume: 0.12
+  quiet_volume: 0.18
+  epic_threshold: 60

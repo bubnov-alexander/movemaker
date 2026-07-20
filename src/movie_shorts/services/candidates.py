@@ -20,14 +20,23 @@ def build_candidates(
     min_duration: float,
     max_duration: float,
     skip_intro: float = 0.0,
+    video_duration: float | None = None,
+    skip_outro: float = 0.0,
 ) -> list[Candidate]:
     intervals: dict[tuple[float, float], tuple[Scene, ...]] = {}
+    latest_end = None
+    if video_duration is not None:
+        latest_end = video_duration - skip_outro
     for start_index, first_scene in enumerate(scenes):
         if first_scene.start < skip_intro:
             continue
+        if latest_end is not None and first_scene.start >= latest_end:
+            break
         window: list[Scene] = []
         for scene in scenes[start_index:]:
             if scene.end - first_scene.start > max_duration:
+                break
+            if latest_end is not None and scene.end > latest_end:
                 break
             window.append(scene)
             duration = scene.end - first_scene.start

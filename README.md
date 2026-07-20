@@ -21,6 +21,7 @@ python3 -m venv .venv
 ```bash
 movie-shorts create ./movie.mp4 --output ./runs/film-001 --count 5 --device cpu
 movie-shorts create ./movie.mp4 --output ./runs/film-001 --device auto --config ./config.yaml
+movie-shorts create ./movie.mp4 --output ./runs/film-001 --skip-outro 60
 ```
 
 Для запуска на GPU после установки CUDA-зависимостей используйте `./gpu.sh` вместо `movie-shorts`: скрипт сам настроит пути к cuBLAS и cuDNN.
@@ -33,7 +34,34 @@ movie-shorts create ./movie.mp4 --output ./runs/film-001 --device auto --config 
 
 `analysis_limit` (по умолчанию `30`) ограничивает число фрагментов, для которых считаются медленные метрики движения и звука. Чем меньше значение, тем быстрее появляется первый ролик, но тем меньше вариантов участвует в точном отборе. Во время работы CLI выводит этапы и счётчик точной оценки в stderr.
 
+`skip_outro` (по умолчанию `60`) исключает финальные секунды фильма из кандидатов. Укажите `--skip-outro 0`, чтобы не пропускать outro, или задайте значение в `config.yaml`.
+
 В результате создаются `manifest.json`, `scenes.json`, `transcript.json`, `candidates.json`, файлы `subtitles/*.ass`, итоговые `shorts/*.mp4` и технический журнал `logs/debug.log`.
+
+## Фоновая музыка
+
+Скопируйте треки в локальную (не добавляемую в Git) папку `music/` и укажите их пути в `config.yaml`: для эпичных сцен — YA YA, для остальных — altyn instrumental. Конвейер выбирает YA YA по совокупности текста, движения, энергии оригинального звука и общего балла сцены. Во время речи и громких моментов FFmpeg автоматически приглушает фон; оригинальная дорожка не меняется.
+
+```yaml
+background_music:
+  epic_path: music/yaya.mp3
+  calm_path: music/altyn.mp3
+  max_volume: 0.12
+  quiet_volume: 0.18
+  epic_threshold: 60
+```
+
+Уменьшите `max_volume`, если фон заметен поверх диалогов. Увеличьте `epic_threshold`, если YA YA должен включаться только в самых сильных сценах.
+
+## Видео в верхней части
+
+Для трёхзональной компоновки положите локальное видео в `backgrounds/background.mp4` и добавьте в `config.yaml`:
+
+```yaml
+layout_background_path: backgrounds/background.mp4
+```
+
+Видео зацикливается в верхней трети кадра. В средней остаётся фрагмент фильма, а в нижней виден размытый фон исходного видео. Звук видеофона не используется.
 
 ## Обработка ошибок
 

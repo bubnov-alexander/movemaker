@@ -57,6 +57,26 @@ def test_create_reads_count_from_yaml_config(monkeypatch, tmp_path) -> None:
     assert captured["count"] == 3
 
 
+def test_create_passes_skip_outro_option_to_pipeline(monkeypatch, tmp_path) -> None:
+    source = tmp_path / "film.mp4"
+    source.touch()
+    captured = {}
+
+    def fake_run(self, config, **kwargs):
+        captured["skip_outro"] = config.skip_outro
+        return RunReport((), ())
+
+    monkeypatch.setattr("movie_shorts.cli.Pipeline.run", fake_run)
+
+    result = CliRunner().invoke(
+        app,
+        ["create", str(source), "--output", str(tmp_path / "out"), "--skip-outro", "30"],
+    )
+
+    assert result.exit_code == 1
+    assert captured["skip_outro"] == 30
+
+
 def test_cli_prints_user_error_without_traceback(monkeypatch, tmp_path) -> None:
     def raise_user_error(*args, **kwargs):
         raise UserFacingError("Файл не найден.")
