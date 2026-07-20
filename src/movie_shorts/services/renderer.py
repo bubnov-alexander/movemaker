@@ -23,12 +23,11 @@ def render_command(
     if layout_background_path is None:
         filter_parts.extend([f"[0:v]{foreground}[fg]", "[base][fg]overlay=(W-w)/2:(H-h)/2[video]"])
     else:
-        zone = "scale=1080:640:force_original_aspect_ratio=increase,crop=1080:640"
         filter_parts.extend([
-            f"[1:v]{zone}[top]",
-            f"[0:v]{zone}[middle]",
+            "[1:v]scale=1080:480:force_original_aspect_ratio=increase,crop=1080:480[top]",
+            "[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960[middle]",
             "[base][top]overlay=0:0[with_top]",
-            "[with_top][middle]overlay=0:640[video]",
+            "[with_top][middle]overlay=0:480[video]",
         ])
     if subtitle_path is not None:
         escaped_subtitle = str(subtitle_path).replace("\\", "\\\\").replace(":", "\\:")
@@ -55,7 +54,7 @@ def render_command(
         if has_source_audio:
             filter_parts.extend([
                 "[0:a]asplit=2[original][sidechain]",
-                "[music][sidechain]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=300[ducked]",
+                "[music][sidechain]sidechaincompress=threshold=0.08:ratio=4:attack=20:release=300[ducked]",
                 f"[ducked]volume={music_config.max_volume / music_config.quiet_volume}[music_limited]",
                 "[original][music_limited]amix=inputs=2:duration=first:normalize=0[mixed]",
             ])
