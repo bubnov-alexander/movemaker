@@ -52,6 +52,24 @@ def test_reads_background_music_from_yaml(tmp_path) -> None:
     )
 
 
+def test_uses_calm_track_for_every_scene_when_epic_path_is_omitted(tmp_path) -> None:
+    config_path = tmp_path / "settings.yaml"
+    config_path.write_text("background_music:\n  calm_path: music/altyn.mp3\n", encoding="utf-8")
+
+    config = load_run_config("film.mp4", tmp_path / "out", config_path)
+
+    assert config.background_music == BackgroundMusicConfig(Path("music/altyn.mp3"), Path("music/altyn.mp3"))
+
+
+def test_uses_epic_track_for_every_scene_when_calm_path_is_omitted(tmp_path) -> None:
+    config_path = tmp_path / "settings.yaml"
+    config_path.write_text("background_music:\n  epic_path: music/yaya.mp3\n", encoding="utf-8")
+
+    config = load_run_config("film.mp4", tmp_path / "out", config_path)
+
+    assert config.background_music == BackgroundMusicConfig(Path("music/yaya.mp3"), Path("music/yaya.mp3"))
+
+
 def test_reads_layout_background_path_from_yaml(tmp_path) -> None:
     config_path = tmp_path / "settings.yaml"
     config_path.write_text("layout_background_path: backgrounds/background.mp4\n", encoding="utf-8")
