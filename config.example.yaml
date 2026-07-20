@@ -28,3 +28,4 @@ background_music:
   max_volume: 0.12
   quiet_volume: 0.18
   epic_threshold: 60
+# Можно указать только epic_path или только calm_path: этот трек будет использован для всех сцен.

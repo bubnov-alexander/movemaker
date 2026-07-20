@@ -82,16 +82,21 @@ def load_run_config(
 
     music_config = None
     if isinstance(background_music, dict):
-        try:
-            music_config = BackgroundMusicConfig(
-                epic_path=Path(str(background_music["epic_path"])),
-                calm_path=Path(str(background_music["calm_path"])),
-                max_volume=float(background_music.get("max_volume", 0.12)),
-                quiet_volume=float(background_music.get("quiet_volume", 0.18)),
-                epic_threshold=float(background_music.get("epic_threshold", 60.0)),
-            )
-        except KeyError as error:
-            raise UserFacingError("Для фоновой музыки укажите epic_path и calm_path.") from error
+        epic_path = background_music.get("epic_path")
+        calm_path = background_music.get("calm_path")
+        if epic_path is None and calm_path is None:
+            raise UserFacingError("Для фоновой музыки укажите epic_path или calm_path.")
+        if epic_path is None:
+            epic_path = calm_path
+        if calm_path is None:
+            calm_path = epic_path
+        music_config = BackgroundMusicConfig(
+            epic_path=Path(str(epic_path)),
+            calm_path=Path(str(calm_path)),
+            max_volume=float(background_music.get("max_volume", 0.12)),
+            quiet_volume=float(background_music.get("quiet_volume", 0.18)),
+            epic_threshold=float(background_music.get("epic_threshold", 60.0)),
+        )
 
     return RunConfig(
         input_path=Path(input_path),
