@@ -23,7 +23,7 @@ def test_groups_close_words_into_one_dialogue_line() -> None:
     assert "Я" in ass and "не" in ass and "хочу" in ass
 
 
-def test_splits_phrase_after_long_pause_and_four_words() -> None:
+def test_splits_phrase_after_long_pause_and_three_words() -> None:
     words = (
         WordTiming(0.0, 0.1, "раз"), WordTiming(0.12, 0.2, "два"),
         WordTiming(0.22, 0.3, "три"), WordTiming(0.32, 0.4, "четыре"),
@@ -32,4 +32,11 @@ def test_splits_phrase_after_long_pause_and_four_words() -> None:
 
     groups = group_words(words)
 
-    assert [len(group) for group in groups] == [4, 1, 1]
+    assert [len(group) for group in groups] == [3, 2, 1]
+
+
+def test_karaoke_keeps_pause_before_the_next_word() -> None:
+    ass = build_ass((WordTiming(0, 0.2, "раз"), WordTiming(0.5, 0.7, "два")), video_start=0)
+
+    assert "Style: Default,Arial,92" in ass
+    assert "{\\k20}раз {\\k30} {\\k20}два" in ass
