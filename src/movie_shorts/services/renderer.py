@@ -17,15 +17,15 @@ def render_command(
     has_source_audio: bool = True,
     layout_background_path: Path | None = None,
 ) -> list[str]:
-    foreground = "scale=1080:1920:force_original_aspect_ratio=decrease"
-    background = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:10"
+    foreground = "scale=1080:1920:force_original_aspect_ratio=decrease,hflip"
+    background = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:10,hflip"
     filter_parts = [f"[0:v]{background}[base]"]
     if layout_background_path is None:
         filter_parts.extend([f"[0:v]{foreground}[fg]", "[base][fg]overlay=(W-w)/2:(H-h)/2[video]"])
     else:
         filter_parts.extend([
-            "[1:v]scale=1080:480:force_original_aspect_ratio=increase,crop=1080:480[top]",
-            "[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960[middle]",
+            "[1:v]scale=1080:480:force_original_aspect_ratio=increase,crop=1080:480,hflip[top]",
+            "[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,hflip[middle]",
             "[base][top]overlay=0:0[with_top]",
             "[with_top][middle]overlay=0:480[video]",
         ])
