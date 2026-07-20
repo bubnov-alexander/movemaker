@@ -7,6 +7,7 @@ skip_outro: 60
 analysis_limit: 30
 language: ru
 device: auto
+# layout_background_path: backgrounds/background.mp4
 keywords:
   убей: 20
   смерть: 20

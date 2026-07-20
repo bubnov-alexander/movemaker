@@ -154,16 +154,24 @@ class Pipeline:
                 storage.output_dir / "logs" / "debug.log",
             )
             if config.background_music is None:
-                rendered_files.append(self.services.render_short(*render_args))
-            else:
-                rendered_files.append(
-                    self.services.render_short(
-                        *render_args,
-                        music=music,
-                        music_config=config.background_music,
-                        has_source_audio=media.has_audio,
+                if config.layout_background_path is None:
+                    rendered_files.append(self.services.render_short(*render_args))
+                else:
+                    rendered_files.append(
+                        self.services.render_short(
+                            *render_args,
+                            layout_background_path=config.layout_background_path,
+                        )
                     )
-                )
+            else:
+                render_kwargs = {
+                    "music": music,
+                    "music_config": config.background_music,
+                    "has_source_audio": media.has_audio,
+                }
+                if config.layout_background_path is not None:
+                    render_kwargs["layout_background_path"] = config.layout_background_path
+                rendered_files.append(self.services.render_short(*render_args, **render_kwargs))
             if index == 1:
                 notify("Создан первый ролик: shorts/short-01.mp4")
 

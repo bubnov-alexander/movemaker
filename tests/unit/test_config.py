@@ -52,6 +52,15 @@ def test_reads_background_music_from_yaml(tmp_path) -> None:
     )
 
 
+def test_reads_layout_background_path_from_yaml(tmp_path) -> None:
+    config_path = tmp_path / "settings.yaml"
+    config_path.write_text("layout_background_path: backgrounds/background.mp4\n", encoding="utf-8")
+
+    config = load_run_config("film.mp4", tmp_path / "out", config_path)
+
+    assert config.layout_background_path == Path("backgrounds/background.mp4")
+
+
 def test_skip_outro_defaults_to_sixty_seconds(tmp_path) -> None:
     config = load_run_config("film.mp4", tmp_path / "out")
 

@@ -35,6 +35,7 @@ class RunConfig:
     language: str = "ru"
     device: Literal["auto", "cpu", "cuda"] = "auto"
     background_music: BackgroundMusicConfig | None = None
+    layout_background_path: Path | None = None
 
     def __post_init__(self) -> None:
         if not 1 <= self.count <= 5:
@@ -68,7 +69,7 @@ def load_run_config(
             raise UserFacingError("Не удалось прочитать YAML-конфигурацию.") from error
         if not isinstance(loaded, dict):
             raise UserFacingError("Конфигурация должна быть YAML-объектом с параметрами.")
-        allowed = {"count", "min_duration", "max_duration", "skip_intro", "skip_outro", "analysis_limit", "language", "device", "keywords", "weights", "background_music"}
+        allowed = {"count", "min_duration", "max_duration", "skip_intro", "skip_outro", "analysis_limit", "language", "device", "keywords", "weights", "background_music", "layout_background_path"}
         unknown = set(loaded) - allowed
         if unknown:
             raise UserFacingError(f"Неизвестные параметры конфигурации: {', '.join(sorted(unknown))}.")
@@ -104,4 +105,5 @@ def load_run_config(
         language=str(values.get("language", "ru")),
         device=str(values.get("device", "auto")),  # type: ignore[arg-type]
         background_music=music_config,
+        layout_background_path=Path(str(values["layout_background_path"])) if values.get("layout_background_path") is not None else None,
     )

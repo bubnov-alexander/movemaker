@@ -39,3 +39,21 @@ def test_render_command_ducks_looped_background_music() -> None:
     assert "atrim=duration=20" in rendered
     assert "sidechaincompress" in rendered
     assert "[mixed]" in rendered
+
+
+def test_render_command_places_looped_layout_video_in_top_third() -> None:
+    command = render_command(
+        Path("film.mp4"),
+        Candidate(1, 10, 30, (), ""),
+        None,
+        Path("out.mp4"),
+        layout_background_path=Path("backgrounds/background.mp4"),
+    )
+
+    rendered = " ".join(command)
+
+    assert command.count("-i") == 2
+    assert "-stream_loop -1 -i backgrounds/background.mp4" in rendered
+    assert "crop=1080:640" in rendered
+    assert "overlay=0:0" in rendered
+    assert "overlay=0:640" in rendered

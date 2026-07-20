@@ -122,3 +122,22 @@ def test_pipeline_records_and_passes_selected_music(tmp_path) -> None:
     assert received[0].track == "epic"
     metadata = RunStorage(tmp_path / "out").manifest()["shorts"]["short-01"]["music"]
     assert metadata["track"] == "epic"
+
+
+def test_pipeline_passes_layout_background_path_to_renderer(tmp_path) -> None:
+    source = tmp_path / "film.mp4"
+    source.touch()
+    received: dict[str, Path] = {}
+    services = Services(
+        probe_media=lambda path: MediaInfo(25, True, False), resolve_device=lambda device: "cpu",
+        detect_scenes=lambda *args: [Scene(1, 0, 25)], transcribe=lambda *args: [],
+        build_candidates=lambda *args: [Candidate(1, 0, 25, (1,), "")],
+        score_candidates=lambda items, *args, **kwargs: items, select_candidates=lambda items, count: items,
+        build_ass=lambda words, start: "",
+        render_short=lambda *args, **kwargs: received.update(kwargs) or tmp_path / "short.mp4",
+    )
+    layout_background = Path("backgrounds/background.mp4")
+
+    Pipeline(services).run(RunConfig(source, tmp_path / "out", layout_background_path=layout_background))
+
+    assert received["layout_background_path"] == layout_background

@@ -46,3 +46,26 @@ def test_renderer_mixes_background_music_with_source_audio(tmp_path, sample_vide
     )
 
     assert probe.stdout.strip() == "audio"
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="FFmpeg не установлен")
+def test_renderer_places_looped_video_in_top_third(tmp_path, sample_video) -> None:
+    layout_background = tmp_path / "background.mp4"
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=red:s=320x180:d=1",
+            str(layout_background),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+    output = render_short(
+        sample_video,
+        Candidate(1, 0, 2, (1,), ""),
+        None,
+        tmp_path / "out.mp4",
+        layout_background_path=layout_background,
+    )
+
+    assert output.exists()
