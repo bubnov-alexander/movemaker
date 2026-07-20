@@ -30,7 +30,7 @@ def render_command(
             "[with_top][middle]overlay=0:480[video]",
         ])
     if subtitle_path is not None:
-        escaped_subtitle = str(subtitle_path).replace("\\", "\\\\").replace(":", "\\:")
+        escaped_subtitle = str(subtitle_path).replace("\\", "/").replace(":", "\\:")
         filter_parts.append(f"[video]ass={escaped_subtitle}[out]")
     else:
         filter_parts.append("[video]null[out]")

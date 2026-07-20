@@ -20,6 +20,17 @@ def test_render_command_creates_vertical_video_with_ass_subtitles() -> None:
     assert "ass=subtitles/short-01.ass" in " ".join(command)
 
 
+def test_render_command_uses_forward_slashes_for_windows_ass_paths() -> None:
+    command = render_command(
+        Path("film.mp4"),
+        Candidate(1, 10, 30, (1,), ""),
+        Path(r"runs\RickAndMorty-best\subtitles\short-01.ass"),
+        Path("shorts/short-01.tmp.mp4"),
+    )
+
+    assert "ass=runs/RickAndMorty-best/subtitles/short-01.ass" in " ".join(command)
+
+
 def test_render_command_ducks_looped_background_music() -> None:
     music_config = BackgroundMusicConfig(Path("music/yaya.mp3"), Path("music/altyn.mp3"))
     selection = MusicSelection("epic", Path("music/yaya.mp3"), 75)
