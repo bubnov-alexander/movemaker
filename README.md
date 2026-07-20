@@ -22,6 +22,7 @@ python3 -m venv .venv
 movie-shorts create ./movie.mp4 --output ./runs/film-001 --count 5 --device cpu
 movie-shorts create ./movie.mp4 --output ./runs/film-001 --device auto --config ./config.yaml
 movie-shorts create ./movie.mp4 --output ./runs/film-001 --skip-outro 60
+movie-shorts create ./episode.mp4 --output ./runs/episode-001 --mode sequential --skip-intro 90 --skip-outro 120
 ```
 
 Для запуска на GPU после установки CUDA-зависимостей используйте `./gpu.sh` вместо `movie-shorts`: скрипт сам настроит пути к cuBLAS и cuDNN.
@@ -35,6 +36,8 @@ movie-shorts create ./movie.mp4 --output ./runs/film-001 --skip-outro 60
 `analysis_limit` (по умолчанию `30`) ограничивает число фрагментов, для которых считаются медленные метрики движения и звука. Чем меньше значение, тем быстрее появляется первый ролик, но тем меньше вариантов участвует в точном отборе. Во время работы CLI выводит этапы и счётчик точной оценки в stderr.
 
 `skip_outro` (по умолчанию `60`) исключает финальные секунды фильма из кандидатов. Укажите `--skip-outro 0`, чтобы не пропускать outro, или задайте значение в `config.yaml`.
+
+`--mode sequential` создаёт последовательные Shorts по всему эпизоду. Длина частей стремится к 60 секундам и может составлять от 45 до 75 секунд, чтобы закончиться на границе сцены; `--count` в этом режиме не применяется.
 
 В результате создаются `manifest.json`, `scenes.json`, `transcript.json`, `candidates.json`, файлы `subtitles/*.ass`, итоговые `shorts/*.mp4` и технический журнал `logs/debug.log`.
 
